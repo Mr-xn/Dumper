@@ -1,3 +1,20 @@
+# 新增
+- 支持通过 javaagent 参数设置需要 dump 的 calss 类前缀
+
+使用方法如下
+
+```
+-javaagent:C:\EFaceGo\Tomcat8\webapps\manage\WEB-INF\lib\dumper.jar=com.hanvon;org.apache.tomcat.util.bcel.classfile.ClassParser;
+```
+
+这样只会dump jvm 里 `com.hanvon` 开头和 `org.apache.tomcat.util.bcel.classfile.ClassParser` 开头的class类，保存位置为 Java 的 temp 目录。
+
+<img width="684" alt="image" src="https://github.com/user-attachments/assets/9c3731ea-85ea-4aef-b52e-008ab716649a" />
+
+<img width="593" alt="image" src="https://github.com/user-attachments/assets/e5e347c9-e39d-4da0-a91d-2d73f8367523" />
+
+<hr>以下为原版介绍<hr>
+
 # Dumper
 
 > Extract the classes dynamically loaded in Java applications.
