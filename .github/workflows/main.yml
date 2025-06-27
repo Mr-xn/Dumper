@@ -8,11 +8,13 @@ on:
       - master
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [8, 11, 17, 21]
+    outputs:
+      matrix: ${{ toJson(matrix.java) }}
 
     steps:
       - name: Checkout code
@@ -27,19 +29,24 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Upload Artifact (JDK${{ matrix.java }})
+      - name: Upload JAR artifact (Java${{ matrix.java }})
         uses: actions/upload-artifact@v4
         with:
-          name: Dumper-java${{ matrix.java }}
-          path: target/*.jar
+          name: dumper-java${{ matrix.java }}
+          path: target/*with-dependencies.jar
 
-      - name: Set output for jar file
-        id: jar
-        run: |
-          echo "jar_path=$(ls target/*with-dependencies.jar | head -n 1)" >> $GITHUB_OUTPUT
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-jars
 
       - name: Create Release Tag
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
@@ -48,11 +55,13 @@ jobs:
           git push origin $TAG
           echo "tag_name=$TAG" >> $GITHUB_ENV
 
-      - name: Upload to Release
+      - name: Show downloaded files
+        run: ls -R all-jars
+
+      - name: Upload all JARs to Release
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          files: ${{ steps.jar.outputs.jar_path }}
+          files: all-jars/**/*
           tag_name: ${{ env.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
