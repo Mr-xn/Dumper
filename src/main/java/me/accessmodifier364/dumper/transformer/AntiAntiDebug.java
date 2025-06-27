@@ -13,6 +13,7 @@ import templates.RuntimeImpl;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
+import java.util.Set;
 
 /**
  * @author accessmodifier364
@@ -21,6 +22,13 @@ import java.util.Arrays;
 
 public final class AntiAntiDebug implements ClassFileTransformer {
 
+    private final Set<String> dumpClassPrefixes;
+
+    // 带前缀集合的构造方法
+    public AntiAntiDebug(Set<String> dumpClassPrefixes) {
+        this.dumpClassPrefixes = dumpClassPrefixes != null ? dumpClassPrefixes : java.util.Collections.emptySet();
+    }
+    
     @Override
     public byte[] transform(
             final ClassLoader loader,
@@ -29,6 +37,17 @@ public final class AntiAntiDebug implements ClassFileTransformer {
             final ProtectionDomain protectionDomain,
             final byte[] classfileBuffer
     ) {
+        // 如果指定了前缀，需要判断是否匹配
+        if (!dumpClassPrefixes.isEmpty()) {
+            boolean match = false;
+            for (String prefix : dumpClassPrefixes) {
+                if (className.startsWith(prefix)) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) return null; // 不匹配则不处理
+        }
         if (!className.equals("sun/management/RuntimeImpl")) {
             return classfileBuffer;
         }
