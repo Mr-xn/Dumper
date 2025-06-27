@@ -1,8 +1,8 @@
 name: Build and Release JARs (Java 8, 11, 17, 21)
 
 on:
-  workflow_dispatch:    # 支持手动触发
-  push:                 # push时自动触发
+  workflow_dispatch:
+  push:
     branches:
       - main
       - master
@@ -38,10 +38,21 @@ jobs:
         run: |
           echo "jar_path=$(ls target/*with-dependencies.jar | head -n 1)" >> $GITHUB_OUTPUT
 
+      - name: Create Release Tag
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          TAG="auto-release-$(date +'%Y%m%d-%H%M%S')"
+          git tag $TAG
+          git push origin $TAG
+          echo "tag_name=$TAG" >> $GITHUB_ENV
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
           files: ${{ steps.jar.outputs.jar_path }}
+          tag_name: ${{ env.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
