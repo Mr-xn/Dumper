@@ -39,13 +39,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-
+  
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: all-jars
-
+  
       - name: Create Release Tag
         run: |
           git config --global user.name "${{ github.actor }}"
@@ -54,10 +57,7 @@ jobs:
           git tag $TAG
           git push origin $TAG
           echo "tag_name=$TAG" >> $GITHUB_ENV
-
-      - name: Show downloaded files
-        run: ls -R all-jars
-
+  
       - name: Upload all JARs to Release
         uses: softprops/action-gh-release@v2
         with:
